@@ -16,15 +16,22 @@
               <button type="submit" class="btn btn-primary">Submit</button>
             </form>
           </div>
-          <div class="col-12 py-5 my-5">
-            <form @submit.prevent="searchGiphy()">
-              <div class="input-group mb-3">
-                <input v-model="editable.query" type="text" class="form-control" placeholder="Search Giphy"
-                  aria-label="Recipient's username" aria-describedby="button-addon2">
-                <button class="btn btn-outline-secondary" type="submit" id="button-addon2"><i
-                    class="mdi mdi-magnify"></i></button>
-              </div>
-            </form>
+          <div class="row">
+            <div class="col-12 pt-5 mt-5">
+              <form @submit.prevent="searchGiphy()">
+                <div class="input-group mb-3">
+                  <input v-model="editable.query" type="text" class="form-control" placeholder="Search Giphy"
+                    aria-label="Recipient's username" aria-describedby="button-addon2">
+                  <button class="btn btn-outline-secondary" type="submit" id="button-addon2"><i
+                      class="mdi mdi-magnify"></i></button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="row">
+            <div v-for="gif in giphys" class="col-6">
+              <img class="img-fluid selectable" @click="selectGif(gif.url)" :src="gif.url" alt="">
+            </div>
           </div>
         </div>
 
@@ -41,7 +48,7 @@
 </template>
 
 <script>
-import { onMounted, computed, ref } from 'vue';
+import { onMounted, computed, ref, watchEffect } from 'vue';
 import { logger } from '../utils/Logger.js';
 import Pop from '../utils/Pop.js';
 import { giftsService } from '../services/GiftsService.js'
@@ -71,7 +78,7 @@ export default {
         try {
           let formData = editable.value
           await giftsService.addGift(formData)
-
+          editable.value = {}
         } catch (error) {
           Pop.error(error.message)
           logger.log('[add gift]', error)
@@ -80,13 +87,21 @@ export default {
       async searchGiphy() {
         try {
           let queryData = editable.value
+          watchEffect(() => {
+            if (AppState.selectedGif) {
+              editable.value.url = AppState.selectedGif
+            }
+          })
           await giftsService.searchGiphy(queryData)
+          editable.value = {}
         } catch (error) {
           Pop.error(error.message)
           logger.log('[search Giphy]')
         }
+      },
+      selectGif(url) {
+        AppState.selectedGif = url
       }
-
     }
   }
 }
